@@ -25,7 +25,7 @@ export function setupDirectories() {
  */
 export function convertVideo(rawVideoName: string, processedVideoName: string) {
   return new Promise<void>((resolve, reject) => {
-    ffmpeg(`${rawVideoBucketName}/${rawVideoName}`)
+    ffmpeg(`${localRawVideoPath}/${rawVideoName}`)
       .outputOptions('-vf', 'scale=-1:360')
       .on('end', () => {
         console.log('Processing finished successfully.');
@@ -35,7 +35,7 @@ export function convertVideo(rawVideoName: string, processedVideoName: string) {
         console.log(`Internal Server Error: ${err.message}`);
         reject(err);
       })
-      .save(`${processedVideoBucketName}/${processedVideoName}`);
+      .save(`${localProcessedVideoPath}/${processedVideoName}`);
   });
 }
 
@@ -63,14 +63,18 @@ export async function downloadRawVideo(fileName: string) {
 export async function uploadProcessedVideo(fileName: string) {
   const bucket = storage.bucket(processedVideoBucketName);
 
-  await bucket.upload(`${localProcessedVideoPath}/${fileName}`, {
-    destination: fileName,
-  });
+  // Upload video to the bucket
+  await storage
+    .bucket(processedVideoBucketName)
+    .upload(`${localProcessedVideoPath}/${fileName}`, {
+      destination: fileName,
+    });
 
   console.log(
     `${localProcessedVideoPath}/${fileName} uploaded to gs://${processedVideoBucketName}/${fileName}`
   );
 
+  // Set the video to be publicly readable
   await bucket.file(fileName).makePublic();
 }
 

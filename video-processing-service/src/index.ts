@@ -14,6 +14,18 @@ const app = express();
 app.use(express.json());
 
 app.post('/process-video', async (req, res) => {
+  if (!req.body) {
+    const msg = 'no Pub/Sub message received';
+    console.error(`error: ${msg}`);
+    res.status(400).send(`Bad Request: ${msg}`);
+    return;
+  }
+  if (!req.body.message) {
+    const msg = 'invalid Pub/Sub message format';
+    console.error(`error: ${msg}`, req.body);
+    res.status(400).send(`Bad Request: ${msg}`);
+    return;
+  }
   // Get the bucket and filename from the Cloud Pub/Sub message
   let data;
   try {
@@ -21,6 +33,7 @@ app.post('/process-video', async (req, res) => {
       'utf8'
     );
     data = JSON.parse(message);
+    console.log(data);
     if (!data.name) {
       throw new Error('Invalid message payload received.');
     }
